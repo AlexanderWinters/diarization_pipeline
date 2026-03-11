@@ -1,0 +1,7 @@
+faster-whisper
+pyannote.audio
+torch
+torchaudio
+tqdm
+pydantic
+python-dotenv
