@@ -47,5 +47,4 @@ models/
 
 # Logs
 *.log
- audio/
- text/
+audio/
