@@ -5,3 +5,4 @@ torchaudio
 tqdm
 pydantic
 python-dotenv
+onnxruntime-gpu; sys_platform == 'linux'

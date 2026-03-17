@@ -12,7 +12,11 @@ A high-performance pipeline for audio transcription and speaker diarization usin
 
 1. Install dependencies:
 ```bash
+# General installation
 pip install -r requirements.txt
+
+# For WSL/Linux with NVIDIA GPU (CUDA), ensure you have the correct version of torch:
+# pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
 ```
 
 2. (Optional) Set up Hugging Face token for diarization:
@@ -23,11 +27,17 @@ pip install -r requirements.txt
 ## Usage
 
 ```bash
-# Standard usage with Hugging Face token
-python pipeline/main.py --input path/to/audio --output results --model base --hf_token YOUR_TOKEN
+# Standard usage (will auto-detect GPU if available)
+python pipeline/main.py --input path/to/audio --output results --hf_token YOUR_TOKEN
 
-# Local usage (if model is already cached or path to config.yaml is provided)
-python pipeline/main.py --input path/to/audio --output results --diar_model /path/to/local/config.yaml
+# Explicitly specify device and compute type
+python pipeline/main.py --input path/to/audio --device cuda --compute_type float16
 ```
+
+### Running on WSL (Windows Subsystem for Linux)
+To use NVIDIA GPUs on WSL:
+1. Ensure you have the [NVIDIA Windows Driver](https://www.nvidia.com/Download/index.aspx) installed on the host machine.
+2. Install the [NVIDIA Container Toolkit](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) if you plan to use Docker, or just ensure CUDA is visible in WSL by running `nvidia-smi` in the WSL terminal.
+3. The pipeline will automatically detect the GPU if `torch.cuda.is_available()` is true.
 
 For more technical details, see [tech.md](tech.md).

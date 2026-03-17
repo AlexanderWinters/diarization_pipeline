@@ -28,7 +28,8 @@ The pipeline will be configurable through a Python script or CLI, allowing users
 - Output directory
 - Whisper model type
 - Hugging Face token for diarization
-- Compute device (cpu, cuda)
+- Compute device (cpu, cuda). Defaults to auto-detection (`cuda` if available).
+- Compute type (float16, int8, float32). Defaults to `float16` for GPU and `float32` for CPU.
 
 #### Detailed Implementation Details
 

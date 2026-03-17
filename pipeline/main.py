@@ -13,8 +13,8 @@ class TranscriptionDiarizationPipeline:
         whisper_model_name: str = "base",
         hf_token: Optional[str] = None,
         diarization_model: str = "pyannote/speaker-diarization-3.1",
-        device: str = "cpu",
-        compute_type: str = "float32"
+        device: Optional[str] = None,
+        compute_type: Optional[str] = None
     ):
         """
         Initialize the transcription and diarization pipeline.
@@ -23,22 +23,30 @@ class TranscriptionDiarizationPipeline:
             whisper_model_name (str): Whisper model to use (e.g., 'base', 'small', 'medium', 'large-v3').
             hf_token (str, optional): Hugging Face token for pyannote.audio models.
             diarization_model (str): Path to local config.yaml or HF repo ID.
-            device (str): Device to use for computation ('cpu' or 'cuda').
-            compute_type (str): Type of computation ('float16', 'int8', 'float32').
+            device (str, optional): Device to use for computation ('cpu' or 'cuda').
+            compute_type (str, optional): Type of computation ('float16', 'int8', 'float32').
         """
-        self.device = device
-        self.compute_type = compute_type
+        if device is None:
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        else:
+            self.device = device
+
+        if compute_type is None:
+            self.compute_type = "float16" if self.device == "cuda" else "float32"
+        else:
+            self.compute_type = compute_type
+            
         self.whisper_model_name = whisper_model_name
         self.hf_token = hf_token
         self.diarization_model = diarization_model
         
         # Load Whisper model
-        print(f"Loading Whisper model: {whisper_model_name} on {device}...")
-        self.whisper_model = WhisperModel(whisper_model_name, device=device, compute_type=compute_type)
+        print(f"Loading Whisper model: {whisper_model_name} on {self.device} with {self.compute_type}...")
+        self.whisper_model = WhisperModel(whisper_model_name, device=self.device, compute_type=self.compute_type)
         
         # Load Diarization model
         self.diarization_pipeline = None
-        print(f"Loading Diarization pipeline: {diarization_model} on {device}...")
+        print(f"Loading Diarization pipeline: {diarization_model} on {self.device}...")
         try:
             # Try to load without token first (in case of local path or cached model)
             self.diarization_pipeline = Pipeline.from_pretrained(
@@ -47,8 +55,7 @@ class TranscriptionDiarizationPipeline:
             )
             
             if self.diarization_pipeline:
-                if device == "cuda":
-                    self.diarization_pipeline.to(torch.device("cuda"))
+                self.diarization_pipeline.to(torch.device(self.device))
                 print("Diarization pipeline loaded successfully.")
             else:
                 print("Warning: Diarization pipeline failed to load. Diarization will be skipped.")
@@ -154,7 +161,8 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default="base", help="Whisper model (tiny, base, small, medium, large-v3)")
     parser.add_argument("--diar_model", type=str, default="pyannote/speaker-diarization-3.1", help="Diarization model (HF repo ID or local path to config.yaml)")
     parser.add_argument("--hf_token", type=str, help="Hugging Face token for diarization")
-    parser.add_argument("--device", type=str, default="cpu", help="Compute device (cpu, cuda)")
+    parser.add_argument("--device", type=str, help="Compute device (cpu, cuda). Defaults to cuda if available.")
+    parser.add_argument("--compute_type", type=str, help="Compute type (float16, int8, float32). Defaults to float16 on cuda, float32 on cpu.")
     
     args = parser.parse_args()
     
@@ -163,7 +171,8 @@ if __name__ == "__main__":
         whisper_model_name=args.model,
         diarization_model=args.diar_model,
         hf_token=args.hf_token,
-        device=args.device
+        device=args.device,
+        compute_type=args.compute_type
     )
     
     if os.path.isdir(args.input):
